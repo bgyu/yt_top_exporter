@@ -20,9 +20,12 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     api_key = os.getenv("YOUTUBE_API_KEY")
-    mock = args.mock or not bool(api_key)
+    mock = args.mock
 
-    out_csv, out_xlsx = exporter.fetch_and_export(
+    if not mock and not api_key:
+        parser.error("YOUTUBE_API_KEY not set in environment. Set it or run with --mock.")
+
+    results = exporter.fetch_and_export(
         categories=args.categories,
         n=args.n,
         lang=args.lang,
@@ -30,8 +33,11 @@ def main(argv=None):
         api_key=api_key,
         mock=mock,
     )
-
-    print("Wrote:", out_csv, out_xlsx)
+    # fetch_and_export may return (csv, xlsx) or (csv, xlsx, enriched_csv)
+    if isinstance(results, tuple) or isinstance(results, list):
+        print("Wrote:", *results)
+    else:
+        print("Wrote:", results)
 
 
 if __name__ == "__main__":
